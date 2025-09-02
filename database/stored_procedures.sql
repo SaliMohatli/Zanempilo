@@ -14,7 +14,7 @@ GO
 CREATE PROCEDURE sp_ManageDonationType
   @Action             NVARCHAR(10),          -- 'INSERT', 'UPDATE', 'DELETE'
   @DonationType_ID    INT            = NULL, -- Required for UPDATE / DELETE
-  @Description        NVARCHAR(255) = NULL   -- Required for INSERT / UPDATE
+  @Description        NVARCHAR(50) = NULL   -- Required for INSERT / UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -59,9 +59,9 @@ GO
 CREATE PROCEDURE sp_ManageDonor
   @Action      NVARCHAR(10),          -- 'INSERT', 'UPDATE', 'DELETE'
   @Donor_ID    INT            = NULL, -- Required for UPDATE / DELETE
-  @First_Name  NVARCHAR(100) = NULL,  -- Required for INSERT / UPDATE
-  @Last_Name   NVARCHAR(100) = NULL,  -- Required for INSERT / UPDATE
-  @Email       NVARCHAR(255) = NULL   -- Required for INSERT / UPDATE
+  @First_Name  NVARCHAR(20) = NULL,  -- Required for INSERT / UPDATE
+  @Last_Name   NVARCHAR(20) = NULL,  -- Required for INSERT / UPDATE
+  @Email       NVARCHAR(40) = NULL   -- Required for INSERT / UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -109,7 +109,7 @@ CREATE PROCEDURE sp_ManageStock
   @Action            NVARCHAR(10),          -- 'INSERT', 'UPDATE', 'DELETE'
   @Stock_ID          INT            = NULL, -- Required for UPDATE / DELETE
   @Donation_ID       INT            = NULL, -- Required for INSERT / UPDATE
-  @Description       NVARCHAR(500) = NULL,  -- Optional for INSERT / UPDATE
+  @Description       NVARCHAR(50) = NULL,  -- Optional for INSERT / UPDATE
   @Quantity_In_Stock INT            = NULL  -- Required for INSERT / UPDATE
 AS
 BEGIN
@@ -157,9 +157,9 @@ GO
 CREATE PROCEDURE sp_ManageClient
   @Action     NVARCHAR(10),           -- 'INSERT', 'UPDATE', 'DELETE'
   @Client_ID  INT            = NULL,  -- Required for UPDATE / DELETE
-  @First_Name NVARCHAR(100) = NULL,   -- Required for INSERT / UPDATE
-  @Last_Name  NVARCHAR(100) = NULL,   -- Required for INSERT / UPDATE
-  @Email      NVARCHAR(255) = NULL    -- Required for INSERT / UPDATE
+  @First_Name NVARCHAR(20) = NULL,   -- Required for INSERT / UPDATE
+  @Last_Name  NVARCHAR(20) = NULL,   -- Required for INSERT / UPDATE
+  @Email      NVARCHAR(40) = NULL    -- Required for INSERT / UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -201,3 +201,4 @@ GO
     VALUES (@OrderID, @StockID, @Qty);
 END;
 GO
+
