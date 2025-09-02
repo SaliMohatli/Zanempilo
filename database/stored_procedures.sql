@@ -7,41 +7,58 @@ GO
   INSERT, UPDATE, DELETE on Donation_Type
   ===========================================
 */
-IF OBJECT_ID('sp_ManageDonationType','P') IS NOT NULL
-  DROP PROCEDURE sp_ManageDonationType;
+IF OBJECT_ID('sp_ManageDonations','P') IS NOT NULL
+  DROP PROCEDURE sp_ManageDonations;
 GO
 
-CREATE PROCEDURE sp_ManageDonationType
-  @Action             NVARCHAR(10),          -- 'INSERT', 'UPDATE', 'DELETE'
-  @DonationType_ID    INT            = NULL, -- Required for UPDATE / DELETE
-  @Description        NVARCHAR(50) = NULL   -- Required for INSERT / UPDATE
+CREATE PROCEDURE sp_ManageDonations
+  @Action          NVARCHAR(10),           -- 'INSERT', 'UPDATE' or 'DELETE'
+  @Donation_ID     INT           = NULL,   -- Required for UPDATE / DELETE
+  @Donor_ID        INT           = NULL,   -- Required for INSERT / UPDATE
+  @DonationType    NVARCHAR(50)  = NULL,   -- Required for INSERT / UPDATE
+  @Donation_Date   DATETIME      = NULL,   -- Required for INSERT / UPDATE
+  @Description     NVARCHAR(50)  = NULL,   -- Optional
+  @Quantity        INT           = NULL    -- Required for INSERT / UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
 
   IF @Action = 'INSERT'
   BEGIN
-    INSERT INTO Donation_Type (Description)
-      VALUES (@Description);
-    SELECT SCOPE_IDENTITY() AS NewDonationTypeID;
+    -- ensure donor exists
+    IF NOT EXISTS (SELECT 1 FROM Donor WHERE Donor_ID = @Donor_ID)
+      RAISERROR('Donor_ID %d does not exist.', 16, 1, @Donor_ID);
+
+    INSERT INTO Donation
+      (Donor_ID, DonationType, Donation_Date, Description, Quantity)
+    VALUES
+      (@Donor_ID, @DonationType, @Donation_Date, @Description, @Quantity);
+
+    SELECT SCOPE_IDENTITY() AS NewDonationID;
   END
   ELSE IF @Action = 'UPDATE'
   BEGIN
-    UPDATE Donation_Type
-      SET Description = @Description
-    WHERE DonationType_ID = @DonationType_ID;
+    UPDATE Donation
+      SET Donor_ID       = @Donor_ID,
+          DonationType   = @DonationType,
+          Donation_Date  = @Donation_Date,
+          Description    = @Description,
+          Quantity       = @Quantity
+    WHERE Donation_ID = @Donation_ID;
 
     SELECT @@ROWCOUNT AS RowsAffected;
   END
   ELSE IF @Action = 'DELETE'
   BEGIN
-    DELETE FROM Donation_Type
-    WHERE DonationType_ID = @DonationType_ID;
+    DELETE FROM Donation
+    WHERE Donation_ID = @Donation_ID;
 
     SELECT @@ROWCOUNT AS RowsDeleted;
   END
   ELSE
+  BEGIN
     RAISERROR('Invalid @Action. Use INSERT, UPDATE or DELETE.', 16, 1);
+  END
 END;
 GO
 
@@ -201,4 +218,5 @@ GO
     VALUES (@OrderID, @StockID, @Qty);
 END;
 GO
+
 
