@@ -44,13 +44,15 @@ GO
 
 IF OBJECT_ID('Client_Order','U') IS NULL
   CREATE TABLE Client_Order (
-    Client_ID       INT            NOT NULL,
-    Stock_ID        INT            NOT NULL,
-    Quantity        INT            NOT NULL,
+    Order_ID        INT        IDENTITY(1,1) PRIMARY KEY,
+    Client_ID       INT        NOT NULL,
+    Stock_ID        INT        NOT NULL,
+    Quantity        INT        NOT NULL,
     Order_Date      DATE       NOT NULL,
     Order_Time      TIME       NOT NULL,
     CONSTRAINT FK_Order_Client FOREIGN KEY(Client_ID) REFERENCES Client(Client_ID) ON DELETE NO ACTION,
-    CONSTRAINT FK_OrderDetail_Stock FOREIGN KEY(Stock_ID)  REFERENCES Stock(Stock_ID) ON DELETE CASCADE
+    CONSTRAINT FK_Order_Stock FOREIGN KEY(Stock_ID)  REFERENCES Stock(Stock_ID) ON DELETE CASCADE
   );
 
 GO
+
