@@ -1,4 +1,4 @@
-+USE ZanempiloDB;
+USE ZanempiloDB;
 GO
 
 -- Donors
@@ -91,3 +91,4 @@ INSERT INTO Order_Detail (Order_ID, Stock_ID, Quantity) VALUES
   (5, 1,  10),  
   (5, 6,  20);
 GO
+
