@@ -13,8 +13,8 @@ GO
 IF OBJECT_ID('Donation','U') IS NULL
   CREATE TABLE Donation (
     Donation_ID       INT            IDENTITY(1,1) PRIMARY KEY,
-    Donor_ID          NVARCHAR(20)    NOT NULL,
-    DonationType      NVARCHAR(50)  NOT NULL,
+    Donor_ID          INT            NOT NULL,
+    DonationType      NVARCHAR(50)   NOT NULL,
     Donation_Date     DATETIME       NOT NULL,
     Description       NVARCHAR(50),
     Quantity          INT            NOT NULL,
@@ -55,4 +55,5 @@ IF OBJECT_ID('Client_Order','U') IS NULL
   );
 
 GO
+
 
