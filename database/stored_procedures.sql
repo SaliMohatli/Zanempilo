@@ -24,7 +24,9 @@ BEGIN
   IF @Action = 'INSERT'
   BEGIN
     IF NOT EXISTS (SELECT 1 FROM Donor WHERE Donor_ID = @Donor_ID)
-      THROW 50000, FORMATMESSAGE('Donor_ID %d does not exist.', @Donor_ID), 1;
+    BEGIN
+      ;THROW 50000, 'Donor_ID does not exist.', 1;
+    END
 
     INSERT INTO Donation
       (Donor_ID, DonationType, Donation_Date, Description, Quantity)
@@ -57,8 +59,9 @@ BEGIN
     SELECT @@ROWCOUNT AS RowsDeleted;
     RETURN;
   END
-
-  THROW 50001, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  BEGIN
+    ;THROW 50001, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
 END;
 GO
 
@@ -109,8 +112,9 @@ BEGIN
     SELECT @@ROWCOUNT AS RowsDeleted;
     RETURN;
   END
-
-  THROW 50002, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  BEGIN
+    ;THROW 50002, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
 END;
 GO
 
@@ -161,8 +165,9 @@ BEGIN
     SELECT @@ROWCOUNT AS RowsDeleted;
     RETURN;
   END
-
-  THROW 50003, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  BEGIN
+  ;THROW 50003, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
 END;
 GO
 
@@ -213,8 +218,9 @@ BEGIN
     SELECT @@ROWCOUNT AS RowsDeleted;
     RETURN;
   END
-
-  THROW 50004, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  BEGIN
+  ;THROW 50004, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
 END;
 GO
 
@@ -272,7 +278,8 @@ BEGIN
     SELECT @@ROWCOUNT AS RowsDeleted;
     RETURN;
   END
-
-  THROW 50005, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  BEGIN
+  ;THROW 50005, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
 END;
 GO
