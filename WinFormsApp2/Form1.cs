@@ -19,8 +19,15 @@ namespace WinFormsApp2
 
         private void btnClients_Click(object sender, EventArgs e)
         {
-            CPadd cPadd = new CPadd(); 
-            cPadd.Show();
+            CPpanel cPpanel = new CPpanel();    
+            cPpanel.Show();
+            this.Hide();
+        }
+
+        private void btnDonors_Click(object sender, EventArgs e)
+        {
+            Dadd dadd = new Dadd();
+            dadd.Show();
             this.Hide();
         }
     }

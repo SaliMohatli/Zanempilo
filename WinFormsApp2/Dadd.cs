@@ -10,11 +10,39 @@ using System.Windows.Forms;
 
 namespace WinFormsApp2
 {
-    public partial class Form2 : Form
+    public partial class Dadd : Form
     {
-        public Form2()
+        public Dadd()
         {
             InitializeComponent();
+        }
+
+        private void btnDUpdate_Click(object sender, EventArgs e)
+        {
+            Dupd dupd = new Dupd();
+            dupd.Show();
+            this.Hide();
+        }
+
+        private void btnDAdd_Click(object sender, EventArgs e)
+        {
+            Dadd dadd = new Dadd();
+            dadd.Show();
+            this.Hide();
+        }
+
+        private void btnDDelete_Click(object sender, EventArgs e)
+        {
+            Donor ddel = new Donor();
+            ddel.Show();
+            this.Hide();
+        }
+
+        private void btnDSearch_Click(object sender, EventArgs e)
+        {
+            Dsear dsear = new Dsear();
+            dsear.Show();
+            this.Hide();
         }
     }
 }

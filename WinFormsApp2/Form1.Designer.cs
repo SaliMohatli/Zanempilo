@@ -44,9 +44,10 @@
             // 
             btnReports.BackColor = Color.DarkOliveGreen;
             btnReports.Font = new Font("Courier New", 13.8F, FontStyle.Bold);
-            btnReports.Location = new Point(450, 450);
+            btnReports.Location = new Point(514, 600);
+            btnReports.Margin = new Padding(3, 4, 3, 4);
             btnReports.Name = "btnReports";
-            btnReports.Size = new Size(141, 41);
+            btnReports.Size = new Size(161, 55);
             btnReports.TabIndex = 28;
             btnReports.Text = "Reports";
             btnReports.UseVisualStyleBackColor = false;
@@ -55,9 +56,10 @@
             // 
             btnStock.BackColor = Color.DarkOliveGreen;
             btnStock.Font = new Font("Courier New", 13.8F, FontStyle.Bold);
-            btnStock.Location = new Point(450, 403);
+            btnStock.Location = new Point(514, 537);
+            btnStock.Margin = new Padding(3, 4, 3, 4);
             btnStock.Name = "btnStock";
-            btnStock.Size = new Size(141, 41);
+            btnStock.Size = new Size(161, 55);
             btnStock.TabIndex = 27;
             btnStock.Text = "Stock";
             btnStock.UseVisualStyleBackColor = false;
@@ -66,9 +68,10 @@
             // 
             btnOrders.BackColor = Color.DarkOliveGreen;
             btnOrders.Font = new Font("Courier New", 13.8F, FontStyle.Bold);
-            btnOrders.Location = new Point(450, 356);
+            btnOrders.Location = new Point(514, 475);
+            btnOrders.Margin = new Padding(3, 4, 3, 4);
             btnOrders.Name = "btnOrders";
-            btnOrders.Size = new Size(141, 41);
+            btnOrders.Size = new Size(161, 55);
             btnOrders.TabIndex = 26;
             btnOrders.Text = "Orders";
             btnOrders.UseVisualStyleBackColor = false;
@@ -77,9 +80,10 @@
             // 
             btnDonations.BackColor = Color.DarkOliveGreen;
             btnDonations.Font = new Font("Courier New", 13.8F, FontStyle.Bold);
-            btnDonations.Location = new Point(450, 309);
+            btnDonations.Location = new Point(514, 412);
+            btnDonations.Margin = new Padding(3, 4, 3, 4);
             btnDonations.Name = "btnDonations";
-            btnDonations.Size = new Size(141, 41);
+            btnDonations.Size = new Size(161, 55);
             btnDonations.TabIndex = 25;
             btnDonations.Text = "Donations";
             btnDonations.UseVisualStyleBackColor = false;
@@ -88,20 +92,23 @@
             // 
             btnDonors.BackColor = Color.DarkOliveGreen;
             btnDonors.Font = new Font("Courier New", 13.8F, FontStyle.Bold);
-            btnDonors.Location = new Point(450, 262);
+            btnDonors.Location = new Point(514, 349);
+            btnDonors.Margin = new Padding(3, 4, 3, 4);
             btnDonors.Name = "btnDonors";
-            btnDonors.Size = new Size(141, 41);
+            btnDonors.Size = new Size(161, 55);
             btnDonors.TabIndex = 24;
             btnDonors.Text = "Donors";
             btnDonors.UseVisualStyleBackColor = false;
+            btnDonors.Click += btnDonors_Click;
             // 
             // btnClients
             // 
             btnClients.BackColor = Color.DarkOliveGreen;
             btnClients.Font = new Font("Courier New", 13.8F, FontStyle.Bold);
-            btnClients.Location = new Point(450, 215);
+            btnClients.Location = new Point(514, 287);
+            btnClients.Margin = new Padding(3, 4, 3, 4);
             btnClients.Name = "btnClients";
-            btnClients.Size = new Size(141, 41);
+            btnClients.Size = new Size(161, 55);
             btnClients.TabIndex = 23;
             btnClients.Text = "Clients";
             btnClients.UseVisualStyleBackColor = false;
@@ -111,29 +118,28 @@
             // 
             label1.AutoSize = true;
             label1.Font = new Font("Bahnschrift", 25.8000011F, FontStyle.Bold);
-            label1.Location = new Point(426, 94);
+            label1.Location = new Point(487, 125);
             label1.Name = "label1";
-            label1.Size = new Size(187, 42);
+            label1.Size = new Size(235, 53);
             label1.TabIndex = 22;
             label1.Text = "Main Menu";
             // 
             // pictureBox1
             // 
             pictureBox1.Image = (Image)resources.GetObject("pictureBox1.Image");
-            pictureBox1.Location = new Point(12, 11);
-            pictureBox1.Margin = new Padding(3, 2, 3, 2);
+            pictureBox1.Location = new Point(14, 15);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(191, 125);
+            pictureBox1.Size = new Size(218, 167);
             pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox1.TabIndex = 21;
             pictureBox1.TabStop = false;
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(148, 129, 116);
-            ClientSize = new Size(1149, 633);
+            ClientSize = new Size(1313, 844);
             Controls.Add(btnReports);
             Controls.Add(btnStock);
             Controls.Add(btnOrders);
@@ -142,6 +148,7 @@
             Controls.Add(btnClients);
             Controls.Add(label1);
             Controls.Add(pictureBox1);
+            Margin = new Padding(3, 4, 3, 4);
             Name = "Form1";
             Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();

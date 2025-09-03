@@ -25,6 +25,15 @@
     <Compile Update="Dadd.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="Dupd.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dsear.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CPpanel.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="Login.cs">
       <SubType>Form</SubType>
     </Compile>

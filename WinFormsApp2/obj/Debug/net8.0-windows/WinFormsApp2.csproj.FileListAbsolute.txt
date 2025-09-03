@@ -21,3 +21,9 @@ C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.CPde
 C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.CPser.resources
 C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.CPupd.resources
 C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.Form1.resources
+C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.Dadd.resources
+C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.Donor.resources
+C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.Dsear.resources
+C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.Dupd.resources
+C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.sourcelink.json
+C:\Users\Ofentse\Desktop\WinFormsApp2\obj\Debug\net8.0-windows\WinFormsApp2.CPpanel.resources
