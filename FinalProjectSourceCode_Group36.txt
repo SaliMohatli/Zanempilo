@@ -1,0 +1,1411 @@
+Forms Code
+Menu.cs [using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace ZnForms
+{
+    public partial class Menu : Form
+    {
+        public Menu()
+        {
+            InitializeComponent();
+        }
+
+        private void btnDonationForm_Click(object sender, EventArgs e)
+        {
+            DonationsForm DonationsForm = new DonationsForm();
+            DonationsForm.Show();
+            this.Hide();
+        }
+
+        private void btnMaintain_Click(object sender, EventArgs e)
+        {
+
+            MaintainForm maintain = new MaintainForm();
+            maintain.Show();
+            this.Hide();
+        }
+
+        private void btnRR_Click(object sender, EventArgs e)
+        {
+
+            RecieveReportsForm rr = new RecieveReportsForm();
+            rr.Show();
+            this.Hide();
+        }
+
+        private void btnIS_Click(object sender, EventArgs e)
+        {
+            IssueStockForm issueStock = new IssueStockForm();
+            issueStock.Show();
+            this.Hide();
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+    }
+}]
+DonationsForm.cs [using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+using Microsoft.Extensions.Configuration;
+
+namespace ZnForms
+{
+    public partial class DonationsForm : Form
+    {
+        private readonly string _connString;
+
+        public DonationsForm()
+        {
+            InitializeComponent();
+
+            // Load connection string from appsettings.json
+            try
+            {
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+                IConfiguration config = builder.Build();
+                _connString = config.GetConnectionString("ZanempiloDB");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to load configuration: {ex.Message}",
+                    "Connection Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+            }
+
+            this.Load += DonationsForm_Load;    
+        }
+
+        private void DonationsForm_Load(object sender, EventArgs e)
+        {
+            MessageBox.Show("Test");
+            // Populate the donation type combo box
+            cmbDonationType.Items.AddRange(new[]
+            {
+                "Food",
+                "Clothes",
+                "Books",
+                "Money",
+                "Other"
+            });
+            cmbDonationType.SelectedIndex = 0;
+
+            // Set the date picker to today by default
+            dtpDonationDate.Value = DateTime.Now.Date;
+            LoadDonations();
+        }
+
+        private void LoadDonations()
+        {
+            
+            try
+            {
+                var dt = new DataTable();
+                using (var conn = new SqlConnection(_connString))
+                using (var cmd = new SqlCommand("SELECT Donation_ID, Donor_ID,DonationType, Donation_Date, Description, Quantity FROM Donation ORDER BY Donation_Date DESC", conn))
+                using (var da = new SqlDataAdapter(cmd))
+                da.Fill(dt);
+                dgvDonations.AutoGenerateColumns = true;    
+                dgvDonations.DataSource = dt;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error loading donations: {ex.Message}",
+                    "Load Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
+        }
+
+        private void btnDonationsBack_Click(object sender, EventArgs e)
+        {
+            new Menu().Show();
+            this.Hide();
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void btnSubmit_Click(object sender, EventArgs e)
+        {
+            // 1. Gather inputs
+            int donorId = (int)nudDonorID.Value;                    // NumericUpDown for Donor_ID
+            string donationType = cmbDonationType.Text;
+            DateTime donationDate = dtpDonationDate.Value;
+            string description = txtDescription.Text.Trim();
+            int quantity = (int)nudQuantity.Value;
+
+            // 2. Basic validation
+            if (donorId <= 0)
+            {
+                MessageBox.Show(
+                    "Please enter a valid Donor ID.",
+                    "Validation Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+                return;
+            }
+
+            if (quantity <= 0)
+            {
+                MessageBox.Show(
+                    "Quantity must be at least 1.",
+                    "Validation Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+                return;
+            }
+
+            // 3. Call the INSERT stored procedure
+            try
+            {
+                using var conn = new SqlConnection(_connString);
+                using var cmd = new SqlCommand("sp_ManageDonations", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@Action", "INSERT");
+                cmd.Parameters.AddWithValue("@Donor_ID", donorId);
+                cmd.Parameters.AddWithValue("@DonationType", donationType);
+                cmd.Parameters.AddWithValue("@Donation_Date", donationDate);
+                cmd.Parameters.AddWithValue("@Description", string.IsNullOrEmpty(description)
+                                                             ? (object)DBNull.Value
+                                                             : description);
+                cmd.Parameters.AddWithValue("@Quantity", quantity);
+
+                conn.Open();
+                var newId = cmd.ExecuteScalar();
+
+                MessageBox.Show(
+                    $"Donation recorded successfully (ID = {newId})",
+                    "Success",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+
+                // Optionally clear inputs for next entry
+                nudDonorID.Value = 1;
+                cmbDonationType.SelectedIndex = 0;
+                dtpDonationDate.Value = DateTime.Now.Date;
+                txtDescription.Clear();
+                nudQuantity.Value = 1;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error inserting donation: {ex.Message}",
+                    "Insert Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
+
+            LoadDonations();
+        }
+    }
+}
+]
+IssueStockForm.cs [using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+using Microsoft.Extensions.Configuration;
+
+namespace ZnForms
+{
+    public partial class IssueStockForm : Form
+    {
+        private readonly string _connString;
+
+        public IssueStockForm()
+        {
+            InitializeComponent();
+
+            // 1. Load connection string from appsettings.json
+            try
+            {
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+                IConfiguration config = builder.Build();
+                _connString = config.GetConnectionString("ZanempiloDB");
+
+                // Quick test that the connection string is valid
+                using (var conn = new SqlConnection(_connString))
+                {
+                    conn.Open();
+                    // you can comment this out after you verify the connection
+                    MessageBox.Show("Connected via appsettings.json!",
+                                    "Connection Test",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load configuration: {ex.Message}",
+                                "Connection Error",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Warning);
+            }
+        }
+
+        private void IssueStockForm_Load(object sender, EventArgs e)
+        {
+            // Populate the grid when the form opens
+            LoadOrders();
+        }
+
+        private void LoadOrders()
+        {
+            dataGridView1.DataSource = ExecuteProc("sp_GetStock");
+            dataGridView2.DataSource = ExecuteProc("sp_GetClient");
+            dgvOrders.DataSource = ExecuteProc("sp_GetClientOrders");
+        }
+
+        private DataTable ExecuteProc(string procName)
+        {
+            var dt = new DataTable();
+
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand(procName, conn) { CommandType = CommandType.StoredProcedure })
+            using (var da = new SqlDataAdapter(cmd))
+            {
+                da.Fill(dt);
+            }
+
+            return dt;
+        }
+
+        private void btnISBack_Click(object sender, EventArgs e)
+        {
+            var menu = new Menu();
+            menu.Show();
+            this.Hide();
+        }
+
+        private void btnSubmit_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // 1. Gather inputs from the form
+                int clientId = (int)nudClientID.Value;
+                int stockId = (int)nudStockID.Value;
+                int qty = (int)nudQuantity.Value;
+                DateTime date = dtpOrderDate.Value.Date;
+                TimeSpan time = DateTime.Now.TimeOfDay;
+
+                // 2. Call the insert stored procedure
+                using (var conn = new SqlConnection(_connString))
+                using (var cmd = new SqlCommand("sp_InsertClientOrder", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Client_ID", clientId);
+                    cmd.Parameters.AddWithValue("@Stock_ID", stockId);
+                    cmd.Parameters.AddWithValue("@Quantity", qty);
+                    cmd.Parameters.AddWithValue("@Order_Date", date);
+                    cmd.Parameters.AddWithValue("@Order_Time", time);
+
+                    conn.Open();
+                    var newId = cmd.ExecuteScalar();
+                    MessageBox.Show($"Order inserted successfully (ID = {newId})",
+                                    "Success",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Information);
+                }
+
+                // 3. Refresh the grid so the new order appears
+                LoadOrders();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error inserting order: {ex.Message}",
+                                "Insert Error",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+            }
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+    }
+}]
+MaintainForm.cs [using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Microsoft.Extensions.Configuration;
+using System.Data.SqlClient;
+
+namespace ZnForms
+{
+    public partial class MaintainForm : Form
+    {
+        private readonly string _connString;
+        public MaintainForm()
+        {
+            InitializeComponent();
+            try
+            {
+                var builder = new ConfigurationBuilder().SetBasePath(AppContext.BaseDirectory).AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                IConfiguration config = builder.Build();
+                _connString = config.GetConnectionString("ZanempiloDB");
+                using (SqlConnection conn = new SqlConnection(_connString))
+                {
+                    conn.Open();
+                    MessageBox.Show("Connected Via appsetting.json!");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load configuration: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void MaintainForm_Load(object sender, EventArgs e) //Load Comboboxes
+        {
+            cmbDonorsAddFieldtoedit.Items.AddRange(new String[]
+            {
+                "First_Name",
+                "Last_Name",
+                "Email"
+            });
+            cmbDonorsAddFieldtoedit.SelectedIndex = 0;
+
+
+            cbxClientUpdate.Items.AddRange(new String[]
+            {
+                "First_Name",
+                "Last_Name",
+                "Email"
+            });
+            cbxClientUpdate.SelectedIndex = 0;
+
+            cmbDonationsUpdateFieldToEdit.Items.AddRange(new String[]
+            {
+                "Donor_ID",
+                "DonationType",
+                "Donation_Date",
+                "Description",
+                "Quantity"
+            });
+            cmbDonationsUpdateFieldToEdit.SelectedIndex = 0;
+
+            cmbStockUpdateFieldtoedit.Items.AddRange(new String[]
+             {
+                "Donation_ID",
+                "Description",
+                "Quantity_In_Stock"
+             });
+            cmbStockUpdateFieldtoedit.SelectedIndex = 0;
+        }
+
+        private void btnMaintainBack_Click(object sender, EventArgs e)
+        {
+            Menu menu = new Menu();
+            menu.Show();
+            this.Hide();
+        }
+
+        private void btnClientAdd_Click(object sender, EventArgs e) //Client Add
+        {
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageClient", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "INSERT");
+            cmd.Parameters.AddWithValue("@First_Name", txtClientAddFirstName.Text.Trim());
+            cmd.Parameters.AddWithValue("@Last_Name", txtClientAddLastName.Text.Trim());
+            cmd.Parameters.AddWithValue("@Email", txtClientAddEmail.Text.Trim());
+
+            conn.Open();
+            var newId = cmd.ExecuteScalar();
+            MessageBox.Show($"Client added with new ID: {newId}");
+        }
+
+        private void btnDonorsAdd_Click(object sender, EventArgs e) //Donor Add
+        {
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageDonor", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "INSERT");
+            cmd.Parameters.AddWithValue("@First_Name", txtDonorsAddFName.Text.Trim());
+            cmd.Parameters.AddWithValue("@Last_Name", txtDonorsAddLName.Text.Trim());
+            cmd.Parameters.AddWithValue("@Email", txtDonorsAddEmail.Text.Trim());
+
+            conn.Open();
+            var newId = cmd.ExecuteScalar(); //returns newDonorId
+            MessageBox.Show($"Donor added with new ID: {newId}");
+        }
+
+        private void btnDonorsUpdate_Click(object sender, EventArgs e) //Donor Update
+        {
+            int donorID = (int)nudDonorsAddDonorID.Value;
+            string selectedField = cmbDonorsAddFieldtoedit.SelectedItem.ToString();
+            string newValue = txtDonorsAddContent.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(newValue))
+            {
+                MessageBox.Show("Please enter a value to update.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string fName = "", lName = "", email = "";
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("SELECT First_Name, Last_Name, Email FROM Donor WHERE Donor_ID = @Donor_ID", conn))
+            {
+                cmd.Parameters.AddWithValue("@Donor_ID", donorID);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        fName = reader["First_Name"].ToString();
+                        lName = reader["Last_Name"].ToString();
+                        email = reader["Email"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Donor not found");
+                        return;
+                    }
+                }
+            }
+
+            switch (selectedField)
+            {
+                case "First_Name": fName = newValue; break;
+                case "Last_Name": lName = newValue; break;
+                case "Email": email = newValue; break;
+
+            }
+
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("sp_ManageDonor", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Action", "UPDATE");
+                cmd.Parameters.AddWithValue("@Donor_ID", donorID);
+                cmd.Parameters.AddWithValue("@First_Name", fName);
+                cmd.Parameters.AddWithValue("@Last_Name", lName);
+                cmd.Parameters.AddWithValue("@Email", email);
+
+                conn.Open();
+                var rows = cmd.ExecuteScalar();
+                MessageBox.Show($"{rows} record(s) updated.");
+            }
+        }
+
+        private void btnClientDelete_Click(object sender, EventArgs e) //Client Delete
+        {
+            int clientID = (int)nudClientIDDelete.Value;
+            var result = MessageBox.Show($"Are you sure you want to delete Client {clientID}?", "Confirm Deletion", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+            {
+                MessageBox.Show("Deletion cancelled.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageClient", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "DELETE");
+            cmd.Parameters.AddWithValue("@Client_ID", clientID);
+            conn.Open();
+            var rows = cmd.ExecuteScalar();
+            MessageBox.Show($"{rows} record(s) updated.");
+        }
+
+        private void btnDonorsDelete_Click(object sender, EventArgs e) //Donors Delete
+        {
+            int donorID = (int)nudDonorsDeleteDonorID.Value;
+            var result = MessageBox.Show($"Are you sure you want to delete Donor {donorID}?", "Confirm Deletion", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+            {
+                MessageBox.Show("Deletion cancelled.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageDonor", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "DELETE");
+            cmd.Parameters.AddWithValue("@Donor_ID", donorID);
+            conn.Open();
+            var rows = cmd.ExecuteScalar();
+            MessageBox.Show($"{rows} record(s) updated.");
+        }
+
+        private void btnExit_Click(object sender, EventArgs e) //Exit
+        {
+            Application.Exit();
+        }
+
+        private void btnClientUpdate_Click(object sender, EventArgs e) //Client Update
+        {
+            int clientID = (int)nudClientIDUpdate.Value;
+            string selectedField = cbxClientUpdate.SelectedItem.ToString();
+            string newValue = txtClientUpdateContent.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(newValue))
+            {
+                MessageBox.Show("Please enter a value to update.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string fName = "", lName = "", email = "";
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("SELECT First_Name, Last_Name, Email FROM Client WHERE Client_ID = @Client_ID", conn))
+            {
+                cmd.Parameters.AddWithValue("@Client_ID", clientID);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        fName = reader["First_Name"].ToString();
+                        lName = reader["Last_Name"].ToString();
+                        email = reader["Email"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Client not found");
+                        return;
+                    }
+                }
+            }
+
+            switch (selectedField)
+            {
+                case "First_Name": fName = newValue; break;
+                case "Last_Name": lName = newValue; break;
+                case "Email": email = newValue; break;
+
+            }
+
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("sp_ManageClient", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Action", "UPDATE");
+                cmd.Parameters.AddWithValue("@Client_ID", clientID);
+                cmd.Parameters.AddWithValue("@First_Name", fName);
+                cmd.Parameters.AddWithValue("@Last_Name", lName);
+                cmd.Parameters.AddWithValue("@Email", email);
+
+                conn.Open();
+                var rows = cmd.ExecuteScalar();
+                MessageBox.Show($"{rows} record(s) updated.");
+            }
+        }
+
+        private void btnStockAdd_Click(object sender, EventArgs e) //Stock Add
+        {
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageStock", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "INSERT");
+            cmd.Parameters.AddWithValue("@Donation_ID", nudStockAddDonationID.Value);
+            cmd.Parameters.AddWithValue("@Description", txtStockAddDescrition.Text.Trim());
+            cmd.Parameters.AddWithValue("@Quantity_In_Stock", nudStockAddQuantity.Value);
+
+            conn.Open();
+            var newId = cmd.ExecuteScalar(); //returns newDonorId
+            MessageBox.Show($"Stock added with new ID: {newId}");
+        }
+
+        private void btnStockUpdate_Click(object sender, EventArgs e) //Stock Update
+        {
+            int stockID = (int)nudStockUpdateStockID.Value;
+            string selectedField = cmbStockUpdateFieldtoedit.SelectedItem.ToString();
+            string newValue = txtStockUpdateContent.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(newValue))
+            {
+                MessageBox.Show("Please enter a value to update.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string donationID = "", description = "", quantity = "";
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("SELECT Donation_ID, Description, Quantity_In_Stock FROM Stock WHERE Stock_ID = @Stock_ID", conn))
+            {
+                cmd.Parameters.AddWithValue("@Stock_ID", stockID);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        donationID = reader["Donation_ID"].ToString();
+                        description = reader["Description"].ToString();
+                        quantity = reader["Quantity_In_Stock"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Stock not found");
+                        return;
+                    }
+                }
+            }
+
+            switch (selectedField)
+            {
+                case "Donation_ID": donationID = newValue; break;
+                case "Description": description = newValue; break;
+                case "Quantity_In_Stock": quantity = newValue; break;
+
+            }
+
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("sp_ManageStock", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Action", "UPDATE");
+                cmd.Parameters.AddWithValue("@Stock_ID", stockID);
+                cmd.Parameters.AddWithValue("@Donation_ID", donationID);
+                cmd.Parameters.AddWithValue("@Description", description);
+                cmd.Parameters.AddWithValue("@Quantity_In_Stock", quantity);
+
+                conn.Open();
+                var rows = cmd.ExecuteScalar();
+                MessageBox.Show($"{rows} record(s) updated.");
+            }
+        }
+
+        private void btnStockDelete_Click(object sender, EventArgs e) //Stock Delete
+        {
+            int stockID = (int)nudStockDeleteStockID.Value;
+            var result = MessageBox.Show($"Are you sure you want to delete Stock {stockID}?", "Confirm Deletion", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+            {
+                MessageBox.Show("Deletion cancelled.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageStock", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "DELETE");
+            cmd.Parameters.AddWithValue("@Stock_ID", stockID);
+            conn.Open();
+            var rows = cmd.ExecuteScalar();
+            MessageBox.Show($"{rows} record(s) updated.");
+        }
+
+        private void btnDonationsAdd_Click(object sender, EventArgs e) //Donations Add
+        {
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageDonations", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "INSERT");
+            cmd.Parameters.AddWithValue("@Donor_ID", nudDonationsAddDonorID.Value);
+            cmd.Parameters.AddWithValue("@DonationType", txtDonationsAddDonationType.Text.Trim());
+            cmd.Parameters.AddWithValue("@Donation_Date", dtpDonationsAddDonationDate.Value);
+            cmd.Parameters.AddWithValue("@Description", txtDonationsAddDescription.Text.Trim());
+            cmd.Parameters.AddWithValue("@Quantity", nudDonatoinsAddQuantity.Value);
+
+            conn.Open();
+            var newId = cmd.ExecuteScalar();
+            MessageBox.Show($"Stock added with new ID: {newId}");
+        }
+
+        private void btnDonationsUpdate_Click(object sender, EventArgs e) //Donations Update
+        {
+            int donationsID = (int)nudDonationsUpdateDonationID.Value;
+            string selectedField = cmbDonationsUpdateFieldToEdit.SelectedItem.ToString();
+            string newValue = txtDonatoinsUpdateContent.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(newValue))
+            {
+                MessageBox.Show("Please enter a value to update.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string donorID = "", donationType = "", donationDate = "", description = "",quantity = "";
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("SELECT Donor_ID, DonationType, Donation_Date, Description, Quantity FROM Donation WHERE Donation_ID = @Donation_ID", conn))
+            {
+                cmd.Parameters.AddWithValue("@Donation_ID", donationsID);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        donorID = reader["Donor_ID"].ToString();
+                        donationType = reader["DonationType"].ToString();
+                        donationDate = reader["Donation_Date"].ToString();
+                        description = reader["Description"].ToString();
+                        quantity = reader["Quantity"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Donation not found");
+                        return;
+                    }
+                }
+            }
+
+            switch (selectedField)
+            {
+                case "Donor_ID": donorID = newValue; break;
+                case "DonationType": donationType = newValue; break;
+                case "Donation_Date": donationDate = newValue; break;
+                case "Description": description = newValue; break;
+                case "Quantity": quantity = newValue; break;
+
+            }
+
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("sp_ManageDonations", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Action", "UPDATE");
+                cmd.Parameters.AddWithValue("@Donation_ID", donationsID);
+                cmd.Parameters.AddWithValue("@Donor_ID", donorID);
+                cmd.Parameters.AddWithValue("@DonationType", donationType);
+                cmd.Parameters.AddWithValue("@Donation_Date", donationDate);
+                cmd.Parameters.AddWithValue("@Description", description);
+                cmd.Parameters.AddWithValue("@Quantity", quantity);
+
+                conn.Open();
+                var rows = cmd.ExecuteScalar();
+                MessageBox.Show($"{rows} record(s) updated.");
+            }
+        }
+
+        private void btnDonationsDelete_Click(object sender, EventArgs e) //Donations Delete
+        {
+            int donationsID = (int)nudDonationsDeleteDonationID.Value;
+            var result = MessageBox.Show($"Are you sure you want to delete Donation(s) {donationsID}?", "Confirm Deletion", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+            {
+                MessageBox.Show("Deletion cancelled.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageDonations", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "DELETE");
+            cmd.Parameters.AddWithValue("@Donation_ID", donationsID);
+            conn.Open();
+            var rows = cmd.ExecuteScalar();
+            MessageBox.Show($"{rows} record(s) updated.");
+        }
+    }
+}]
+RecieveReportsForm.cs [using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Microsoft.Extensions.Configuration;
+using System.Data.SqlClient;
+
+namespace ZnForms
+{
+    public partial class RecieveReportsForm : Form
+    {
+        private readonly string _connString;
+        public RecieveReportsForm()
+        {
+            InitializeComponent();
+            var builder = new ConfigurationBuilder().SetBasePath(AppContext.BaseDirectory).AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            IConfiguration config = builder.Build();
+            _connString = config.GetConnectionString("ZanempiloDB");
+        }
+
+        private void RecieveReportsForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private DataTable ExecuteProc(string procName)
+        {
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand(procName, conn) { CommandType = CommandType.StoredProcedure };
+            using var da = new SqlDataAdapter(cmd);
+            var dt = new DataTable();
+            da.Fill(dt);
+            return dt;
+        }
+
+        private void btnRRBack_Click(object sender, EventArgs e)
+        {
+            Menu menu = new Menu();
+            menu.Show();
+            this.Hide();
+        }
+
+        private void btnGetTotalDonatedByDonor_Click(object sender, EventArgs e)
+        {
+            dgvReports.DataSource = ExecuteProc("sp_GetTotalDonatedByDonor");
+            lblRT.Text = "Total Donated By Donor Report";
+            lblRTime.Text = "Report generated on: " + DateTime.Now.ToString("g");   
+        }
+
+        private void btnGetCurrentStockLevels_Click(object sender, EventArgs e)
+        {
+            dgvReports.DataSource = ExecuteProc("sp_GetCurrentStockLevels");
+            lblRT.Text = "Current Stock Levels Report";
+            lblRTime.Text = "Report generated on: " + DateTime.Now.ToString("g");  
+        }
+
+        private void btnGetOrdersWithItems_Click(object sender, EventArgs e)
+        {
+            dgvReports.DataSource = ExecuteProc("sp_GetOrdersWithItems");
+            lblRT.Text = "Orders With Items Report";
+            lblRTime.Text = "Report generated on: " + DateTime.Now.ToString("g");
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+
+        }
+    }
+}]
+Sql Code
+Create [USE ZanempiloDB;
+GO
+
+IF OBJECT_ID('Donor','U') IS NULL
+  CREATE TABLE Donor (
+    Donor_ID      INT            IDENTITY(1,1) PRIMARY KEY,
+    First_Name    NVARCHAR(20)  NOT NULL,
+    Last_Name     NVARCHAR(20)  NOT NULL,
+    Email         NVARCHAR(40)  UNIQUE
+  );
+GO
+
+IF OBJECT_ID('Donation','U') IS NULL
+  CREATE TABLE Donation (
+    Donation_ID       INT            IDENTITY(1,1) PRIMARY KEY,
+    Donor_ID          INT            NOT NULL,
+    DonationType      NVARCHAR(50)   NOT NULL,
+    Donation_Date     DATETIME       NOT NULL,
+    Description       NVARCHAR(50),
+    Quantity          INT            NOT NULL,
+    CONSTRAINT FK_Donation_Donor       FOREIGN KEY(Donor_ID)         REFERENCES Donor(Donor_ID) ON DELETE NO ACTION
+  );
+GO
+
+
+IF OBJECT_ID('Stock','U') IS NULL
+  CREATE TABLE Stock (
+    Stock_ID         INT            IDENTITY(1,1) PRIMARY KEY,
+    Donation_ID      INT            NOT NULL,
+    Description      NVARCHAR(50),
+    Quantity_In_Stock INT           NOT NULL,
+    CONSTRAINT FK_Stock_Donation FOREIGN KEY(Donation_ID) REFERENCES Donation(Donation_ID) ON DELETE CASCADE
+  );
+GO
+
+IF OBJECT_ID('Client','U') IS NULL
+  CREATE TABLE Client (
+    Client_ID     INT            IDENTITY(1,1) PRIMARY KEY,
+    First_Name    NVARCHAR(20)  NOT NULL,
+    Last_Name     NVARCHAR(20)  NOT NULL,
+    Email         NVARCHAR(40)  UNIQUE
+  );
+GO
+
+IF OBJECT_ID('Client_Order','U') IS NULL
+  CREATE TABLE Client_Order (
+    Order_ID        INT        IDENTITY(1,1) PRIMARY KEY,
+    Client_ID       INT        NOT NULL,
+    Stock_ID        INT        NOT NULL,
+    Quantity        INT        NOT NULL,
+    Order_Date      DATE       NOT NULL,
+    Order_Time      TIME       NOT NULL,
+    CONSTRAINT FK_Order_Client FOREIGN KEY(Client_ID) REFERENCES Client(Client_ID) ON DELETE NO ACTION,
+    CONSTRAINT FK_Order_Stock FOREIGN KEY(Stock_ID)  REFERENCES Stock(Stock_ID) ON DELETE CASCADE
+  );
+
+GO]
+Seed[
+USE ZanempiloDB;
+GO
+
+-- Donors
+INSERT INTO Donor (First_Name, Last_Name, Email) VALUES
+  ('Thabo',   'Mokoena',        'thabo.mokoena@example.com'),
+  ('Naledi',  'Khumalo',        'naledi.khumalo@example.com'),
+  ('Pieter',  'van der Merwe',  'pieter.vdmerwe@example.com'),
+  ('Aisha',   'Patel',          'aisha.patel@example.com'),
+  ('Sipho',   'Dlamini',        'sipho.dlamini@example.com');
+GO
+
+-- Donations (10 rows)
+INSERT INTO Donation (Donor_ID, DonationType, Donation_Date, Description, Quantity) VALUES
+  (1, 'Food',             '2025-08-20', 'Canned Food Packs',      100),
+  (2, 'Medical Supplies', '2025-08-21', 'Surgical Masks',         200),
+  (3, 'Clothing',         '2025-08-22', 'Warm Blankets',           50),
+  (4, 'Hygiene',          '2025-08-23', 'Toothbrushes & Soap',    150),
+  (5, 'Food',             '2025-08-24', 'Bottled Water Cases',     75),
+  (1, 'Clothing',         '2025-08-25', 'Winter Jackets',          30),
+  (2, 'Food',             '2025-08-26', 'Rice Bags (10 kg)',       60),
+  (3, 'Medical Supplies', '2025-08-27', 'Bandages & Dressings',   120),
+  (4, 'Food',             '2025-08-28', 'Snack Bars',              90),
+  (5, 'Hygiene',          '2025-08-29', 'Sanitary Pads',          200);
+GO
+
+-- Stock (one row per donation)
+INSERT INTO Stock (Donation_ID, Description, Quantity_In_Stock) VALUES
+  (1,  'Canned Food Packs',        100),
+  (2,  'Surgical Masks',           200),
+  (3,  'Warm Blankets',             50),
+  (4,  'Toothbrushes & Soap',      150),
+  (5,  'Bottled Water Cases',       75),
+  (6,  'Winter Jackets',            30),
+  (7,  'Rice Bags (10 kg)',         60),
+  (8,  'Bandages & Dressings',     120),
+  (9,  'Snack Bars',                90),
+  (10, 'Sanitary Pads',            200);
+GO
+
+-- Clients
+INSERT INTO Client (First_Name, Last_Name, Email) VALUES
+  ('Lindiwe', 'Zulu',     'lindiwe.zulu@example.com'),
+  ('Johan',   'Smit',     'johan.smit@example.com'),
+  ('Fatima',  'Mohamed',  'fatima.mohamed@example.com'),
+  ('Lebo',    'Nkosi',    'lebo.nkosi@example.com'),
+  ('Mandla',  'Nkosi',    'mandla.nkosi@example.com');
+GO
+
+-- Client Orders (10 rows)
+INSERT INTO Client_Order (Client_ID, Stock_ID, Quantity, Order_Date, Order_Time) VALUES
+  (1,  1,  20, '2025-09-01', '09:00:00'),
+  (1,  5,  10, '2025-09-01', '09:30:00'),
+  (2,  2,  15, '2025-09-02', '10:00:00'),
+  (2,  8,   5, '2025-09-02', '10:30:00'),
+  (3,  3,   2, '2025-09-03', '11:00:00'),
+  (3, 10,  50, '2025-09-03', '11:30:00'),
+  (4,  4,  30, '2025-09-04', '12:00:00'),
+  (4,  7,  20, '2025-09-04', '12:30:00'),
+  (5,  6,   5, '2025-09-05', '13:00:00'),
+  (5,  9,  10, '2025-09-05', '13:30:00');
+GO]
+Insert[USE ZanempiloDB;
+GO
+
+CREATE PROCEDURE sp_GetTotalDonatedByDonor
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT d.Donor_ID,
+         d.First_Name + ' ' + d.Last_Name AS DonorName,
+         SUM(do.Quantity) AS TotalDonated
+  FROM Donor d
+  JOIN Donation do ON d.Donor_ID = do.Donor_ID
+  GROUP BY d.Donor_ID, d.First_Name, d.Last_Name;
+END;
+GO
+
+CREATE PROCEDURE sp_GetCurrentStockLevels
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT Stock_ID, Description, Quantity_In_Stock
+  FROM Stock
+  ORDER BY Quantity_In_Stock DESC;
+END;
+GO
+
+CREATE PROCEDURE sp_GetOrdersWithItems
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT o.Order_ID,
+         c.First_Name + ' ' + c.Last_Name AS ClientName,
+         o.Order_Date,
+         od.Stock_ID,
+         od.Quantity
+  FROM Client_Order o
+  JOIN Client c    ON o.Client_ID = c.Client_ID
+  JOIN Order_Detail od ON o.Order_ID = od.Order_ID
+  ORDER BY o.Order_Date;
+END;
+GO]
+Maintain/Stored_Procedures[USE ZanempiloDB;
+GO
+
+/* =========================================
+   sp_ManageDonations
+   INSERT / UPDATE / DELETE on Donation
+   ========================================= */
+IF OBJECT_ID('sp_ManageDonations','P') IS NOT NULL
+  DROP PROCEDURE sp_ManageDonations;
+GO
+
+CREATE PROCEDURE sp_ManageDonations
+  @Action          NVARCHAR(10),
+  @Donation_ID     INT           = NULL,  -- for UPDATE/DELETE
+  @Donor_ID        INT           = NULL,  -- for INSERT/UPDATE
+  @DonationType    NVARCHAR(50)  = NULL,  -- for INSERT/UPDATE
+  @Donation_Date   DATETIME      = NULL,  -- for INSERT/UPDATE
+  @Description     NVARCHAR(50)  = NULL,  -- optional
+  @Quantity        INT           = NULL   -- for INSERT/UPDATE
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF @Action = 'INSERT'
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Donor WHERE Donor_ID = @Donor_ID)
+    BEGIN
+      ;THROW 50000, 'Donor_ID does not exist.', 1;
+    END
+
+    INSERT INTO Donation
+      (Donor_ID, DonationType, Donation_Date, Description, Quantity)
+    VALUES
+      (@Donor_ID, @DonationType, @Donation_Date, @Description, @Quantity);
+
+    SELECT SCOPE_IDENTITY() AS NewDonationID;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'UPDATE'
+  BEGIN
+    UPDATE Donation
+      SET Donor_ID      = @Donor_ID,
+          DonationType  = @DonationType,
+          Donation_Date = @Donation_Date,
+          Description   = @Description,
+          Quantity      = @Quantity
+    WHERE Donation_ID = @Donation_ID;
+
+    SELECT @@ROWCOUNT AS RowsAffected;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'DELETE'
+  BEGIN
+    DELETE FROM Donation
+    WHERE Donation_ID = @Donation_ID;
+
+    SELECT @@ROWCOUNT AS RowsDeleted;
+    RETURN;
+  END
+  BEGIN
+    ;THROW 50001, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
+END;
+GO
+
+
+/* =========================================
+   sp_ManageDonor
+   INSERT / UPDATE / DELETE on Donor
+   ========================================= */
+IF OBJECT_ID('sp_ManageDonor','P') IS NOT NULL
+  DROP PROCEDURE sp_ManageDonor;
+GO
+
+CREATE PROCEDURE sp_ManageDonor
+  @Action      NVARCHAR(10),
+  @Donor_ID    INT           = NULL,
+  @First_Name  NVARCHAR(20)  = NULL,
+  @Last_Name   NVARCHAR(20)  = NULL,
+  @Email       NVARCHAR(40)  = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF @Action = 'INSERT'
+  BEGIN
+    INSERT INTO Donor (First_Name, Last_Name, Email)
+      VALUES (@First_Name, @Last_Name, @Email);
+    SELECT SCOPE_IDENTITY() AS NewDonorID;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'UPDATE'
+  BEGIN
+    UPDATE Donor
+      SET First_Name = @First_Name,
+          Last_Name  = @Last_Name,
+          Email      = @Email
+    WHERE Donor_ID = @Donor_ID;
+
+    SELECT @@ROWCOUNT AS RowsAffected;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'DELETE'
+  BEGIN
+    DELETE FROM Donor
+    WHERE Donor_ID = @Donor_ID;
+
+    SELECT @@ROWCOUNT AS RowsDeleted;
+    RETURN;
+  END
+  BEGIN
+    ;THROW 50002, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
+END;
+GO
+
+
+/* =========================================
+   sp_ManageStock
+   INSERT / UPDATE / DELETE on Stock
+   ========================================= */
+IF OBJECT_ID('sp_ManageStock','P') IS NOT NULL
+  DROP PROCEDURE sp_ManageStock;
+GO
+
+CREATE PROCEDURE sp_ManageStock
+  @Action            NVARCHAR(10),
+  @Stock_ID          INT           = NULL,
+  @Donation_ID       INT           = NULL,
+  @Description       NVARCHAR(50)  = NULL,
+  @Quantity_In_Stock INT           = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF @Action = 'INSERT'
+  BEGIN
+    INSERT INTO Stock (Donation_ID, Description, Quantity_In_Stock)
+      VALUES (@Donation_ID, @Description, @Quantity_In_Stock);
+    SELECT SCOPE_IDENTITY() AS NewStockID;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'UPDATE'
+  BEGIN
+    UPDATE Stock
+      SET Donation_ID       = @Donation_ID,
+          Description       = @Description,
+          Quantity_In_Stock = @Quantity_In_Stock
+    WHERE Stock_ID = @Stock_ID;
+
+    SELECT @@ROWCOUNT AS RowsAffected;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'DELETE'
+  BEGIN
+    DELETE FROM Stock
+    WHERE Stock_ID = @Stock_ID;
+
+    SELECT @@ROWCOUNT AS RowsDeleted;
+    RETURN;
+  END
+  BEGIN
+  ;THROW 50003, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
+END;
+GO
+
+
+/* =========================================
+   sp_ManageClient
+   INSERT / UPDATE / DELETE on Client
+   ========================================= */
+IF OBJECT_ID('sp_ManageClient','P') IS NOT NULL
+  DROP PROCEDURE sp_ManageClient;
+GO
+
+CREATE PROCEDURE sp_ManageClient
+  @Action     NVARCHAR(10),
+  @Client_ID  INT           = NULL,
+  @First_Name NVARCHAR(20)  = NULL,
+  @Last_Name  NVARCHAR(20)  = NULL,
+  @Email      NVARCHAR(40)  = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF @Action = 'INSERT'
+  BEGIN
+    INSERT INTO Client (First_Name, Last_Name, Email)
+      VALUES (@First_Name, @Last_Name, @Email);
+    SELECT SCOPE_IDENTITY() AS NewClientID;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'UPDATE'
+  BEGIN
+    UPDATE Client
+      SET First_Name = @First_Name,
+          Last_Name  = @Last_Name,
+          Email      = @Email
+    WHERE Client_ID = @Client_ID;
+
+    SELECT @@ROWCOUNT AS RowsAffected;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'DELETE'
+  BEGIN
+    DELETE FROM Client
+    WHERE Client_ID = @Client_ID;
+
+    SELECT @@ROWCOUNT AS RowsDeleted;
+    RETURN;
+  END
+  BEGIN
+  ;THROW 50004, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
+END;
+GO
+
+
+/* =========================================
+   sp_ManageClientOrder
+   INSERT / UPDATE / DELETE on Client_Order
+   ========================================= */
+IF OBJECT_ID('sp_ManageClientOrder','P') IS NOT NULL
+  DROP PROCEDURE sp_ManageClientOrder;
+GO
+
+CREATE PROCEDURE sp_ManageClientOrder
+  @Action     NVARCHAR(10),
+  @Order_ID   INT          = NULL,
+  @Client_ID  INT          = NULL,
+  @Stock_ID   INT          = NULL,
+  @Quantity   INT          = NULL,
+  @Order_Date DATE         = NULL,
+  @Order_Time TIME         = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF @Action = 'INSERT'
+  BEGIN
+    INSERT INTO Client_Order
+      (Client_ID, Stock_ID, Quantity, Order_Date, Order_Time)
+    VALUES
+      (@Client_ID, @Stock_ID, @Quantity, @Order_Date, @Order_Time);
+
+    SELECT SCOPE_IDENTITY() AS NewOrderID;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'UPDATE'
+  BEGIN
+    UPDATE Client_Order
+      SET Client_ID  = @Client_ID,
+          Stock_ID   = @Stock_ID,
+          Quantity   = @Quantity,
+          Order_Date = @Order_Date,
+          Order_Time = @Order_Time
+    WHERE Order_ID = @Order_ID;
+
+    SELECT @@ROWCOUNT AS RowsAffected;
+    RETURN;
+  END
+
+  ELSE IF @Action = 'DELETE'
+  BEGIN
+    DELETE FROM Client_Order
+    WHERE Order_ID = @Order_ID;
+
+    SELECT @@ROWCOUNT AS RowsDeleted;
+    RETURN;
+  END
+  BEGIN
+  ;THROW 50005, 'Invalid @Action. Use INSERT, UPDATE or DELETE.', 1;
+  END
+END;
+GO
+
+USE ZanempiloDB;
+GO
+
+/* =========================================
+   sp_GetStock
+   Returns all rows from the Stock table
+   ========================================= */
+IF OBJECT_ID('sp_GetStock','P') IS NOT NULL
+    DROP PROCEDURE sp_GetStock;
+GO
+
+CREATE PROCEDURE sp_GetStock
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        Stock_ID,
+        Donation_ID,
+        Description,
+        Quantity_In_Stock
+    FROM dbo.Stock
+    ORDER BY Stock_ID;
+END;
+GO
+
+/* =========================================
+   sp_GetClient
+   Returns all rows from the Client table
+   ========================================= */
+IF OBJECT_ID('sp_GetClient','P') IS NOT NULL
+    DROP PROCEDURE sp_GetClient;
+GO
+
+CREATE PROCEDURE sp_GetClient
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        Client_ID,
+        First_Name,
+        Last_Name,
+        Email
+    FROM dbo.Client
+    ORDER BY Client_ID;
+END;
+GO]
