@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -22,6 +22,18 @@ namespace ZnForms
             Menu menu = new Menu();
             menu.Show();
             this.Hide();
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void btnSubmit_Click(object sender, EventArgs e)
+        {
+            int quantity = (int)nudQuantity.Value;
+            string donationType = cmbDonationType.SelectedItem?.ToString() ?? "Not Selected";
+            string description = txtDescription.Text;
         }
     }
 }
