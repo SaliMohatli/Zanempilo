@@ -283,3 +283,52 @@ BEGIN
   END
 END;
 GO
+
+USE ZanempiloDB;
+GO
+
+/* =========================================
+   sp_GetStock
+   Returns all rows from the Stock table
+   ========================================= */
+IF OBJECT_ID('sp_GetStock','P') IS NOT NULL
+    DROP PROCEDURE sp_GetStock;
+GO
+
+CREATE PROCEDURE sp_GetStock
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        Stock_ID,
+        Donation_ID,
+        Description,
+        Quantity_In_Stock
+    FROM dbo.Stock
+    ORDER BY Stock_ID;
+END;
+GO
+
+/* =========================================
+   sp_GetClient
+   Returns all rows from the Client table
+   ========================================= */
+IF OBJECT_ID('sp_GetClient','P') IS NOT NULL
+    DROP PROCEDURE sp_GetClient;
+GO
+
+CREATE PROCEDURE sp_GetClient
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        Client_ID,
+        First_Name,
+        Last_Name,
+        Email
+    FROM dbo.Client
+    ORDER BY Client_ID;
+END;
+GO
