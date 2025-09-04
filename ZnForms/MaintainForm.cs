@@ -45,6 +45,33 @@ namespace ZnForms
                 "Email"
             });
             cmbDonorsAddFieldtoedit.SelectedIndex = 0;
+
+
+            cbxClientUpdate.Items.AddRange(new String[]
+            {
+                "First_Name",
+                "Last_Name",
+                "Email"
+            });
+            cbxClientUpdate.SelectedIndex = 0;
+
+            cmbDonationsUpdateFieldToEdit.Items.AddRange(new String[]
+            {
+                "Donor_ID",
+                "DonationType",
+                "Donation_Date",
+                "Description",
+                "Quantity"
+            });
+            cmbDonationsUpdateFieldToEdit.SelectedIndex = 0;
+
+            cmbStockUpdateFieldtoedit.Items.AddRange(new String[]
+             {
+                "Donation_ID",
+                "Description",
+                "Quantity_In_Stock"
+             });
+            cmbStockUpdateFieldtoedit.SelectedIndex = 0;
         }
 
         private void btnMaintainBack_Click(object sender, EventArgs e)
@@ -251,12 +278,76 @@ namespace ZnForms
 
         private void btnStockAdd_Click(object sender, EventArgs e) //Stock Add
         {
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageStock", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
 
+            cmd.Parameters.AddWithValue("@Action", "INSERT");
+            cmd.Parameters.AddWithValue("@Donation_ID", nudStockAddDonationID.Value);
+            cmd.Parameters.AddWithValue("@Description", txtStockAddDescrition.Text.Trim());
+            cmd.Parameters.AddWithValue("@Quantity_In_Stock", nudStockAddQuantity.Value);
+
+            conn.Open();
+            var newId = cmd.ExecuteScalar(); //returns newDonorId
+            MessageBox.Show($"Stock added with new ID: {newId}");
         }
 
         private void btnStockUpdate_Click(object sender, EventArgs e) //Stock Update
         {
+            int stockID = (int)nudStockUpdateStockID.Value;
+            string selectedField = cmbStockUpdateFieldtoedit.SelectedItem.ToString();
+            string newValue = txtStockUpdateContent.Text.Trim();
 
+            if (string.IsNullOrWhiteSpace(newValue))
+            {
+                MessageBox.Show("Please enter a value to update.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string donationID = "", description = "", quantity = "";
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("SELECT Donation_ID, Description, Quantity_In_Stock FROM Stock WHERE Stock_ID = @Stock_ID", conn))
+            {
+                cmd.Parameters.AddWithValue("@Stock_ID", stockID);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        donationID = reader["Donation_ID"].ToString();
+                        description = reader["Description"].ToString();
+                        quantity = reader["Quantity_In_Stock"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Stock not found");
+                        return;
+                    }
+                }
+            }
+
+            switch (selectedField)
+            {
+                case "Donation_ID": donationID = newValue; break;
+                case "Description": description = newValue; break;
+                case "Quantity_In_Stock": quantity = newValue; break;
+
+            }
+
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("sp_ManageStock", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Action", "UPDATE");
+                cmd.Parameters.AddWithValue("@Stock_ID", stockID);
+                cmd.Parameters.AddWithValue("@Donation_ID", donationID);
+                cmd.Parameters.AddWithValue("@Description", description);
+                cmd.Parameters.AddWithValue("@Quantity_In_Stock", quantity);
+
+                conn.Open();
+                var rows = cmd.ExecuteScalar();
+                MessageBox.Show($"{rows} record(s) updated.");
+            }
         }
 
         private void btnStockDelete_Click(object sender, EventArgs e) //Stock Delete
@@ -275,6 +366,109 @@ namespace ZnForms
 
             cmd.Parameters.AddWithValue("@Action", "DELETE");
             cmd.Parameters.AddWithValue("@Stock_ID", stockID);
+            conn.Open();
+            var rows = cmd.ExecuteScalar();
+            MessageBox.Show($"{rows} record(s) updated.");
+        }
+
+        private void btnDonationsAdd_Click(object sender, EventArgs e) //Donations Add
+        {
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageDonations", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "INSERT");
+            cmd.Parameters.AddWithValue("@Donor_ID", nudDonationsAddDonorID.Value);
+            cmd.Parameters.AddWithValue("@DonationType", txtDonationsAddDonationType.Text.Trim());
+            cmd.Parameters.AddWithValue("@Donation_Date", dtpDonationsAddDonationDate.Value);
+            cmd.Parameters.AddWithValue("@Description", txtDonationsAddDescription.Text.Trim());
+            cmd.Parameters.AddWithValue("@Quantity", nudDonatoinsAddQuantity.Value);
+
+            conn.Open();
+            var newId = cmd.ExecuteScalar();
+            MessageBox.Show($"Stock added with new ID: {newId}");
+        }
+
+        private void btnDonationsUpdate_Click(object sender, EventArgs e) //Donations Update
+        {
+            int donationsID = (int)nudDonationsUpdateDonationID.Value;
+            string selectedField = cmbDonationsUpdateFieldToEdit.SelectedItem.ToString();
+            string newValue = txtDonatoinsUpdateContent.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(newValue))
+            {
+                MessageBox.Show("Please enter a value to update.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string donorID = "", donationType = "", donationDate = "", description = "",quantity = "";
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("SELECT Donor_ID, DonationType, Donation_Date, Description, Quantity FROM Stock WHERE Donation_ID = @Donation_ID", conn))
+            {
+                cmd.Parameters.AddWithValue("@Donation_ID", donationsID);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        donorID = reader["Donor_ID"].ToString();
+                        donationType = reader["DonationType"].ToString();
+                        donationDate = reader["Donation_Date"].ToString();
+                        description = reader["Description"].ToString();
+                        quantity = reader["Quantity"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Donation not found");
+                        return;
+                    }
+                }
+            }
+
+            switch (selectedField)
+            {
+                case "Donor_ID": donorID = newValue; break;
+                case "DonationType": donationType = newValue; break;
+                case "Donation_Date": donationDate = newValue; break;
+                case "Description": description = newValue; break;
+                case "Quantity": quantity = newValue; break;
+
+            }
+
+            using (var conn = new SqlConnection(_connString))
+            using (var cmd = new SqlCommand("sp_ManageDonations", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Action", "UPDATE");
+                cmd.Parameters.AddWithValue("@Donation_ID", donationsID);
+                cmd.Parameters.AddWithValue("@Donor_ID", donorID);
+                cmd.Parameters.AddWithValue("@DonationType", donationType);
+                cmd.Parameters.AddWithValue("@Donation_Date", donationDate);
+                cmd.Parameters.AddWithValue("@Description", description);
+                cmd.Parameters.AddWithValue("@Quantity", quantity);
+
+                conn.Open();
+                var rows = cmd.ExecuteScalar();
+                MessageBox.Show($"{rows} record(s) updated.");
+            }
+        }
+
+        private void btnDonationsDelete_Click(object sender, EventArgs e) //Donations Delete
+        {
+            int donationsID = (int)nudStockDeleteStockID.Value;
+            var result = MessageBox.Show($"Are you sure you want to delete Donation(s) {donationsID}?", "Confirm Deletion", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+            {
+                MessageBox.Show("Deletion cancelled.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var conn = new SqlConnection(_connString);
+            using var cmd = new SqlCommand("sp_ManageDonations", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@Action", "DELETE");
+            cmd.Parameters.AddWithValue("@Donation_ID", donationsID);
             conn.Open();
             var rows = cmd.ExecuteScalar();
             MessageBox.Show($"{rows} record(s) updated.");
