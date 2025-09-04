@@ -1,3 +1,53 @@
+USE ZanempiloDB;
+GO
+
+IF OBJECT_ID('sp_GetClientOrders','P') IS NOT NULL
+  DROP PROCEDURE sp_GetClientOrders;
+GO
+
+CREATE PROCEDURE sp_GetClientOrders
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT 
+    o.Order_ID,
+    o.Client_ID,
+    o.Stock_ID,
+    o.Quantity,
+    o.Order_Date,
+    o.Order_Time
+  FROM Client_Order o
+  ORDER BY o.Order_Date, o.Order_Time;
+END;
+GO
+
+IF OBJECT_ID('sp_InsertClientOrder','P') IS NOT NULL
+  DROP PROCEDURE sp_InsertClientOrder;
+GO
+
+CREATE PROCEDURE sp_InsertClientOrder
+  @Client_ID INT,
+  @Stock_ID  INT,
+  @Quantity  INT,
+  @Order_Date DATE,
+  @Order_Time TIME
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  INSERT INTO Client_Order
+    (Client_ID, Stock_ID, Quantity, Order_Date, Order_Time)
+  VALUES
+    (@Client_ID, @Stock_ID, @Quantity, @Order_Date, @Order_Time);
+
+  SELECT SCOPE_IDENTITY() AS NewOrderID;
+END;
+GO
+
+
+
+
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -135,3 +185,4 @@ namespace ZnForms
         }
     }
 }
+
