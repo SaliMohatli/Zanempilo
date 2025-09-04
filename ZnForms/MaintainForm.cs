@@ -403,7 +403,7 @@ namespace ZnForms
 
             string donorID = "", donationType = "", donationDate = "", description = "",quantity = "";
             using (var conn = new SqlConnection(_connString))
-            using (var cmd = new SqlCommand("SELECT Donor_ID, DonationType, Donation_Date, Description, Quantity FROM Stock WHERE Donation_ID = @Donation_ID", conn))
+            using (var cmd = new SqlCommand("SELECT Donor_ID, DonationType, Donation_Date, Description, Quantity FROM Donation WHERE Donation_ID = @Donation_ID", conn))
             {
                 cmd.Parameters.AddWithValue("@Donation_ID", donationsID);
                 conn.Open();
@@ -455,7 +455,7 @@ namespace ZnForms
 
         private void btnDonationsDelete_Click(object sender, EventArgs e) //Donations Delete
         {
-            int donationsID = (int)nudStockDeleteStockID.Value;
+            int donationsID = (int)nudDonationsDeleteDonationID.Value;
             var result = MessageBox.Show($"Are you sure you want to delete Donation(s) {donationsID}?", "Confirm Deletion", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result != DialogResult.Yes)
             {
